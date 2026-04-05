@@ -7,9 +7,6 @@ from datetime import date
 import uuid
 from enum import Enum
 
-# =========================
-# INIT APP
-# =========================
 app = FastAPI(
     title="Mood Tracker API",
     version="1.0",
@@ -19,9 +16,6 @@ app = FastAPI(
     ]
 )
 
-# =========================
-# CORS (biar frontend bisa akses)
-# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -30,9 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# SECURITY (TOKEN)
-# =========================
 security = HTTPBearer()
 active_tokens = []
 
@@ -41,9 +32,6 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if token not in active_tokens:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-# =========================
-# ENUM (validasi mood)
-# =========================
 class MoodType(str, Enum):
     senang = "senang"
     sedih = "sedih"
@@ -52,9 +40,6 @@ class MoodType(str, Enum):
     semangat = "semangat"
     santai = "santai"
 
-# =========================
-# SCHEMA
-# =========================
 class Mood(BaseModel):
     id: Optional[str] = None
     nama: str
@@ -66,21 +51,12 @@ class Login(BaseModel):
     username: str
     password: str
 
-# =========================
-# DATABASE (sementara pakai list)
-# =========================
 database_moods: List[Mood] = []
 
-# =========================
-# ROOT
-# =========================
 @app.get("/")
 def root():
     return {"message": "Mood Tracker API 😊"}
 
-# =========================
-# LOGIN
-# =========================
 @app.post("/api/login", tags=["Auth"])
 def login(user: Login):
     if user.username and user.password:
@@ -94,9 +70,6 @@ def login(user: Login):
 
     raise HTTPException(status_code=401, detail="Login gagal")
 
-# =========================
-# CREATE MOOD
-# =========================
 @app.post("/api/moods", tags=["Moods"])
 def create_mood(data: Mood, _: None = Depends(verify_token)):
     data.id = str(uuid.uuid4())
@@ -107,16 +80,11 @@ def create_mood(data: Mood, _: None = Depends(verify_token)):
         "data": data
     }
 
-# =========================
-# GET ALL MOODS
-# =========================
+
 @app.get("/api/moods", response_model=List[Mood], tags=["Moods"])
 def get_moods(_: None = Depends(verify_token)):
     return database_moods
 
-# =========================
-# UPDATE MOOD
-# =========================
 @app.put("/api/moods/{mood_id}", tags=["Moods"])
 def update_mood(mood_id: str, updated: Mood, _: None = Depends(verify_token)):
     for i, mood in enumerate(database_moods):
@@ -130,9 +98,7 @@ def update_mood(mood_id: str, updated: Mood, _: None = Depends(verify_token)):
 
     raise HTTPException(status_code=404, detail="Mood not found")
 
-# =========================
-# DELETE MOOD
-# =========================
+
 @app.delete("/api/moods/{mood_id}", tags=["Moods"])
 def delete_mood(mood_id: str, _: None = Depends(verify_token)):
     for i, mood in enumerate(database_moods):
@@ -145,9 +111,7 @@ def delete_mood(mood_id: str, _: None = Depends(verify_token)):
 
     raise HTTPException(status_code=404, detail="Mood not found")
 
-# =========================
-# HEALTH CHECK
-# =========================
+
 @app.get("/health")
 def health():
     return {"status": "OK"}
